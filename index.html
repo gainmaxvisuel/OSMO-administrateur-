@@ -1,0 +1,643 @@
+<!DOCTYPE html><html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <title>OSMO — Administration</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(
+          circle at 50% 0%,
+          rgba(124, 58, 237, 0.20),
+          transparent 38%
+        ),
+        #050505;
+
+      color: #ffffff;
+      font-family: "Inter", sans-serif;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 430px;
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo {
+      width: 86px;
+      height: 86px;
+
+      object-fit: cover;
+
+      border-radius: 24px;
+
+      border: 2px solid #7c3aed;
+
+      box-shadow:
+        0 0 35px rgba(124, 58, 237, 0.28);
+    }
+
+    .brand h1 {
+      margin-top: 17px;
+
+      font-size: 26px;
+      font-weight: 800;
+
+      letter-spacing: -0.6px;
+    }
+
+    .brand p {
+      margin-top: 7px;
+
+      color: #71717a;
+
+      font-size: 12px;
+    }
+
+    .card {
+      background: rgba(13, 13, 15, 0.96);
+
+      border: 1px solid rgba(139, 92, 246, 0.22);
+
+      border-radius: 23px;
+
+      padding: 28px 24px;
+
+      box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.55),
+        0 0 40px rgba(109, 40, 217, 0.07);
+    }
+
+    .card-title {
+      font-size: 19px;
+      font-weight: 800;
+
+      margin-bottom: 23px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      color: #d4d4d8;
+
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      height: 54px;
+
+      border: 1px solid #27272a;
+      border-radius: 13px;
+
+      background: #09090b;
+
+      color: #ffffff;
+
+      padding: 0 15px;
+
+      outline: none;
+
+      font-family: inherit;
+      font-size: 15px;
+
+      transition: 0.2s ease;
+    }
+
+    input::placeholder {
+      color: #52525b;
+    }
+
+    input:focus {
+      border-color: #8b5cf6;
+
+      box-shadow:
+        0 0 0 3px rgba(139, 92, 246, 0.10);
+    }
+
+    .password-box {
+      position: relative;
+    }
+
+    .password-box input {
+      padding-right: 80px;
+    }
+
+    .toggle-password {
+      position: absolute;
+
+      right: 13px;
+      top: 50%;
+
+      transform: translateY(-50%);
+
+      border: 0;
+      background: transparent;
+
+      color: #a78bfa;
+
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+
+      cursor: pointer;
+    }
+
+    .message {
+      display: none;
+
+      padding: 12px 14px;
+
+      margin-bottom: 18px;
+
+      border-radius: 11px;
+
+      font-size: 13px;
+
+      line-height: 1.45;
+    }
+
+    .message.error {
+      display: block;
+
+      color: #fca5a5;
+
+      background: rgba(127, 29, 29, 0.18);
+
+      border: 1px solid rgba(248, 113, 113, 0.20);
+    }
+
+    .message.success {
+      display: block;
+
+      color: #86efac;
+
+      background: rgba(20, 83, 45, 0.18);
+
+      border: 1px solid rgba(74, 222, 128, 0.20);
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 54px;
+
+      border: 0;
+      border-radius: 13px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #7c3aed,
+          #9333ea
+        );
+
+      color: #ffffff;
+
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 800;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 10px 30px rgba(124, 58, 237, 0.25);
+
+      transition: 0.2s ease;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-1px);
+
+      box-shadow:
+        0 14px 35px rgba(124, 58, 237, 0.35);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.60;
+
+      cursor: not-allowed;
+
+      transform: none;
+    }
+
+    .security {
+      margin-top: 18px;
+
+      padding: 12px 14px;
+
+      border-radius: 11px;
+
+      background: rgba(124, 58, 237, 0.06);
+
+      border: 1px solid rgba(139, 92, 246, 0.12);
+
+      color: #71717a;
+
+      font-size: 11px;
+
+      line-height: 1.5;
+
+      text-align: center;
+    }
+
+    .footer {
+      text-align: center;
+
+      margin-top: 20px;
+
+      color: #3f3f46;
+
+      font-size: 11px;
+    }
+
+    @media (max-width: 380px) {
+      body {
+        padding: 15px;
+      }
+
+      .card {
+        padding: 24px 18px;
+      }
+
+      .brand h1 {
+        font-size: 23px;
+      }
+    }
+  </style></head><body>  <main class="container"><div class="brand">
+
+  <img
+    src="../logo.png"
+    alt="OSMO"
+    class="logo"
+  >
+
+  <h1>Administration OSMO</h1>
+
+  <p>
+    Accès sécurisé au panneau d'administration
+  </p>
+
+</div>
+
+
+<section class="card">
+
+  <div class="card-title">
+    Connexion administrateur
+  </div>
+
+
+  <div
+    id="message"
+    class="message"
+  ></div>
+
+
+  <form id="loginForm">
+
+    <div class="field">
+
+      <label for="phone">
+        Numéro de téléphone
+      </label>
+
+      <input
+        type="tel"
+        id="phone"
+        inputmode="numeric"
+        maxlength="10"
+        pattern="[0-9]{10}"
+        placeholder="XXXXXXXXXX"
+        autocomplete="tel"
+        required
+      >
+
+    </div>
+
+
+    <div class="field">
+
+      <label for="password">
+        Mot de passe
+      </label>
+
+      <div class="password-box">
+
+        <input
+          type="password"
+          id="password"
+          placeholder="Votre mot de passe"
+          autocomplete="current-password"
+          required
+        >
+
+        <button
+          type="button"
+          class="toggle-password"
+          id="togglePassword"
+        >
+          Afficher
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <button
+      type="submit"
+      class="login-btn"
+      id="loginBtn"
+    >
+      Se connecter
+    </button>
+
+  </form>
+
+
+  <div class="security">
+    Accès réservé aux administrateurs autorisés.
+  </div>
+
+</section>
+
+
+<div class="footer">
+  OSMO Administration
+</div>
+
+  </main>  <script>
+
+    const SUPABASE_URL =
+      "https://ubzcivowwhglvzpyeueg.supabase.co";
+
+    const SUPABASE_KEY =
+      "sb_publishable_oPjQfIoZzfv1LuLAfsua4g_97K_tXSO";
+
+
+    const supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+
+
+    const form =
+      document.getElementById("loginForm");
+
+    const phoneInput =
+      document.getElementById("phone");
+
+    const passwordInput =
+      document.getElementById("password");
+
+    const loginBtn =
+      document.getElementById("loginBtn");
+
+    const message =
+      document.getElementById("message");
+
+    const togglePassword =
+      document.getElementById("togglePassword");
+
+
+    function showMessage(
+      text,
+      type = "error"
+    ) {
+
+      message.textContent = text;
+
+      message.className =
+        "message " + type;
+
+    }
+
+
+    function clearMessage() {
+
+      message.textContent = "";
+
+      message.className =
+        "message";
+
+    }
+
+
+    phoneInput.addEventListener(
+      "input",
+      () => {
+
+        phoneInput.value =
+          phoneInput.value
+            .replace(/\D/g, "")
+            .slice(0, 10);
+
+      }
+    );
+
+
+    togglePassword.addEventListener(
+      "click",
+      () => {
+
+        const hidden =
+          passwordInput.type === "password";
+
+        passwordInput.type =
+          hidden ? "text" : "password";
+
+        togglePassword.textContent =
+          hidden ? "Masquer" : "Afficher";
+
+      }
+    );
+
+
+    form.addEventListener(
+      "submit",
+      async (event) => {
+
+        event.preventDefault();
+
+        clearMessage();
+
+
+        const phone =
+          phoneInput.value.trim();
+
+        const password =
+          passwordInput.value;
+
+
+        if (!/^[0-9]{10}$/.test(phone)) {
+
+          showMessage(
+            "Le numéro doit contenir exactement 10 chiffres."
+          );
+
+          phoneInput.focus();
+
+          return;
+        }
+
+
+        if (!password) {
+
+          showMessage(
+            "Veuillez entrer votre mot de passe."
+          );
+
+          passwordInput.focus();
+
+          return;
+        }
+
+
+        loginBtn.disabled = true;
+
+        loginBtn.textContent =
+          "Connexion...";
+
+
+        try {
+
+          /*
+           * La fonction actuelle login_admin_session
+           * attend actuellement p_password_hash.
+           *
+           * Cette partie sera branchée sur la fonction
+           * sécurisée de connexion administrateur dès
+           * que celle-ci sera configurée dans Supabase.
+           */
+
+          const {
+            data,
+            error
+          } =
+            await supabaseClient.rpc(
+              "login_admin_session",
+              {
+                p_phone: phone,
+                p_password_hash: password
+              }
+            );
+
+
+          if (error) {
+
+            console.error(error);
+
+            showMessage(
+              "Numéro ou mot de passe administrateur incorrect."
+            );
+
+            return;
+          }
+
+
+          if (!data || !data.session_token) {
+
+            showMessage(
+              "Connexion administrateur impossible."
+            );
+
+            return;
+          }
+
+
+          localStorage.setItem(
+            "osmo_admin_session_token",
+            data.session_token
+          );
+
+
+          localStorage.setItem(
+            "osmo_admin_id",
+            data.admin_id || ""
+          );
+
+
+          localStorage.setItem(
+            "osmo_admin_code",
+            data.admin_code || ""
+          );
+
+
+          localStorage.setItem(
+            "osmo_admin_name",
+            data.full_name || ""
+          );
+
+
+          localStorage.setItem(
+            "osmo_admin_role",
+            data.role || ""
+          );
+
+
+          showMessage(
+            "Connexion réussie. Ouverture du panel...",
+            "success"
+          );
+
+
+          setTimeout(
+            () => {
+
+              window.location.href =
+                "dashboard.html";
+
+            },
+            600
+          );
+
+
+        } catch (error) {
+
+          console.error(error);
+
+          showMessage(
+            "Une erreur est survenue pendant la connexion."
+          );
+
+        } finally {
+
+          loginBtn.disabled = false;
+
+          loginBtn.textContent =
+            "Se connecter";
+
+        }
+
+      }
+    );
+
+  </script></body>
+</html>
