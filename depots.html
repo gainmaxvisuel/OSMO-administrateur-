@@ -1,0 +1,1022 @@
+<!DOCTYPE html><html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <title>OSMO — Dépôts</title>  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #09070d;
+      color: #f5f3f7;
+      min-height: 100vh;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 245px;
+      background: #0d0a12;
+      border-right: 1px solid #251b30;
+      padding: 24px 15px;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      overflow-y: auto;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo img {
+      width: 62px;
+      height: 62px;
+      object-fit: contain;
+      border-radius: 14px;
+      margin-bottom: 8px;
+    }
+
+    .logo strong {
+      display: block;
+      font-size: 21px;
+      letter-spacing: 2px;
+    }
+
+    .logo span {
+      color: #9b8fa5;
+      font-size: 11px;
+    }
+
+    .nav a {
+      display: block;
+      color: #bdb4c5;
+      text-decoration: none;
+      padding: 13px 14px;
+      margin-bottom: 5px;
+      border-radius: 9px;
+      font-size: 14px;
+    }
+
+    .nav a:hover,
+    .nav a.active {
+      background: #21152b;
+      color: #c9a7ff;
+    }
+
+    .main {
+      margin-left: 245px;
+      width: calc(100% - 245px);
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .topbar h1 {
+      font-size: 25px;
+    }
+
+    .topbar p {
+      color: #877b8e;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    .refresh {
+      background: #21152b;
+      color: #c9a7ff;
+      border: 1px solid #392546;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .filter {
+      background: #110d16;
+      border: 1px solid #291e31;
+      color: #bdb4c5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .filter.active {
+      background: #261832;
+      border-color: #4a3260;
+      color: #d0b5f6;
+    }
+
+    .search {
+      width: 100%;
+      background: #110d16;
+      border: 1px solid #291e31;
+      color: #fff;
+      padding: 13px 14px;
+      border-radius: 9px;
+      outline: none;
+      margin-bottom: 18px;
+    }
+
+    .search:focus {
+      border-color: #604378;
+    }
+
+    .box {
+      background: #110d16;
+      border: 1px solid #251b30;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .loading,
+    .empty,
+    .error {
+      padding: 30px;
+      text-align: center;
+      color: #8d8292;
+      font-size: 13px;
+    }
+
+    .error {
+      color: #ffabb5;
+      background: #32151a;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1050px;
+      border-collapse: collapse;
+    }
+
+    th {
+      padding: 14px;
+      background: #0d0a11;
+      border-bottom: 1px solid #251b30;
+      color: #827687;
+      text-align: left;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid #211927;
+      color: #ddd7e0;
+      font-size: 12px;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .id {
+      color: #c7a6fa;
+      font-weight: bold;
+    }
+
+    .amount {
+      color: #72dfa9;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .phone {
+      white-space: nowrap;
+    }
+
+    .date {
+      color: #9b909f;
+      white-space: nowrap;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 9px;
+      border-radius: 7px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .status.pending {
+      color: #e7c878;
+      background: #302711;
+      border: 1px solid #5d4b1e;
+    }
+
+    .status.approved {
+      color: #72e1aa;
+      background: #102d20;
+      border: 1px solid #1d6143;
+    }
+
+    .status.rejected {
+      color: #ff9fa9;
+      background: #32151a;
+      border: 1px solid #71303a;
+    }
+
+    .actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .proof {
+      background: #21172a;
+      color: #cbaaf6;
+      border-color: #49345a;
+    }
+
+    .approve {
+      background: #123426;
+      color: #7ae5af;
+      border-color: #245f45;
+    }
+
+    .reject {
+      background: #411a20;
+      color: #ffadb6;
+      border-color: #73303a;
+    }
+
+    .btn:hover {
+      filter: brightness(1.15);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, .84);
+      padding: 25px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-box {
+      width: min(900px, 100%);
+      max-height: 92vh;
+      background: #100c14;
+      border: 1px solid #352541;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 18px;
+      border-bottom: 1px solid #291e31;
+    }
+
+    .modal-head strong {
+      font-size: 14px;
+    }
+
+    .close {
+      background: transparent;
+      border: 0;
+      color: #aaa0ae;
+      cursor: pointer;
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    .proof-area {
+      padding: 18px;
+      overflow: auto;
+      text-align: center;
+      min-height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .proof-area img {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .proof-area iframe {
+      width: 100%;
+      height: 70vh;
+      border: 0;
+      border-radius: 8px;
+      background: #000;
+    }
+
+    .proof-loading {
+      color: #968b9b;
+      font-size: 13px;
+    }
+
+    @media (max-width: 800px) {
+      .layout {
+        display: block;
+      }
+
+      .sidebar {
+        position: static;
+        width: 100%;
+        min-height: auto;
+      }
+
+      .main {
+        margin-left: 0;
+        width: 100%;
+        padding: 18px;
+      }
+
+      .nav {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+      }
+
+      .nav a {
+        margin: 0;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style></head><body><div class="layout">  <aside class="sidebar"><div class="logo">
+  <img src="../logo.png" alt="OSMO">
+  <strong>OSMO</strong>
+  <span>Administration</span>
+</div>
+
+<nav class="nav">
+  <a href="dashboard.html">Dashboard</a>
+  <a href="utilisateurs.html">Utilisateurs</a>
+  <a href="depots.html" class="active">Dépôts</a>
+  <a href="retraits.html">Retraits</a>
+  <a href="produits.html">Produits</a>
+  <a href="parrainages.html">Parrainages</a>
+  <a href="transactions.html">Transactions</a>
+  <a href="parametres.html">Paramètres</a>
+</nav>
+
+  </aside>  <main class="main"><div class="topbar">
+
+  <div>
+    <h1>Dépôts</h1>
+    <p>Gestion et vérification des demandes de dépôt.</p>
+  </div>
+
+  <button class="refresh" onclick="loadDeposits()">
+    Actualiser
+  </button>
+
+</div>
+
+<div class="filters">
+
+  <button
+    class="filter active"
+    data-status=""
+    onclick="setStatus(this, '')">
+    Tous
+  </button>
+
+  <button
+    class="filter"
+    data-status="pending"
+    onclick="setStatus(this, 'pending')">
+    En attente
+  </button>
+
+  <button
+    class="filter"
+    data-status="approved"
+    onclick="setStatus(this, 'approved')">
+    Approuvés
+  </button>
+
+  <button
+    class="filter"
+    data-status="rejected"
+    onclick="setStatus(this, 'rejected')">
+    Rejetés
+  </button>
+
+</div>
+
+<input
+  id="search"
+  class="search"
+  type="search"
+  placeholder="Rechercher par ID, téléphone payeur ou utilisateur..."
+  oninput="renderTable()">
+
+<div class="box">
+
+  <div id="loading" class="loading">
+    Chargement des dépôts...
+  </div>
+
+  <div id="error" class="error" style="display:none;"></div>
+
+  <div
+    id="empty"
+    class="empty"
+    style="display:none;">
+    Aucun dépôt trouvé.
+  </div>
+
+  <div
+    id="tableContainer"
+    class="table-wrap"
+    style="display:none;">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Transaction</th>
+          <th>Utilisateur</th>
+          <th>Montant</th>
+          <th>Téléphone payeur</th>
+          <th>Opérateur</th>
+          <th>Statut</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody id="depositRows"></tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+  </main></div><div id="proofModal" class="modal" onclick="closeProof(event)">  <div class="modal-box"><div class="modal-head">
+
+  <strong>Preuve du dépôt</strong>
+
+  <button
+    class="close"
+    onclick="closeProof()">
+    ×
+  </button>
+
+</div>
+
+<div id="proofArea" class="proof-area">
+
+  <div class="proof-loading">
+    Chargement de la preuve...
+  </div>
+
+</div>
+
+  </div></div><script>
+
+  const SUPABASE_URL =
+    "https://ubzcivowwhglvzpyeueg.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_oPjQfIoZzfv1LuLAfsua4g_97K_tXSO";
+
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+  const sessionToken =
+    localStorage.getItem(
+      "osmo_admin_session_token"
+    );
+
+  let deposits = [];
+  let currentStatus = "";
+
+  const loading =
+    document.getElementById("loading");
+
+  const errorBox =
+    document.getElementById("error");
+
+  const empty =
+    document.getElementById("empty");
+
+  const tableContainer =
+    document.getElementById("tableContainer");
+
+  const rows =
+    document.getElementById("depositRows");
+
+  function formatXOF(value) {
+
+    return Number(value || 0)
+      .toLocaleString("fr-FR") + " XOF";
+
+  }
+
+  function formatDate(value) {
+
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "—";
+    }
+
+    return date.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+  }
+
+  function escapeHtml(value) {
+
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return "";
+    }
+
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+
+  }
+
+  function statusLabel(status) {
+
+    const labels = {
+      pending: "En attente",
+      approved: "Approuvé",
+      rejected: "Rejeté"
+    };
+
+    return labels[status] || status || "—";
+
+  }
+
+  function setStatus(button, status) {
+
+    currentStatus = status;
+
+    document
+      .querySelectorAll(".filter")
+      .forEach(btn => {
+        btn.classList.remove("active");
+      });
+
+    button.classList.add("active");
+
+    loadDeposits();
+
+  }
+
+  async function loadDeposits() {
+
+    if (!sessionToken) {
+
+      window.location.href =
+        "index.html";
+
+      return;
+
+    }
+
+    loading.style.display = "block";
+    errorBox.style.display = "none";
+    empty.style.display = "none";
+    tableContainer.style.display = "none";
+
+    const { data, error } =
+      await supabaseClient.rpc(
+        "admin_deposits",
+        {
+          p_session_token: sessionToken,
+          p_status:
+            currentStatus || null
+        }
+      );
+
+    loading.style.display = "none";
+
+    if (error) {
+
+      console.error(error);
+
+      errorBox.textContent =
+        error.message ||
+        "Impossible de charger les dépôts.";
+
+      errorBox.style.display = "block";
+
+      return;
+
+    }
+
+    deposits =
+      Array.isArray(data)
+        ? data
+        : [];
+
+    renderTable();
+
+  }
+
+  function renderTable() {
+
+    const query =
+      document
+        .getElementById("search")
+        .value
+        .trim()
+        .toLowerCase();
+
+    const filtered =
+      deposits.filter(deposit => {
+
+        if (!query) {
+          return true;
+        }
+
+        return [
+          deposit.id,
+          deposit.transaction_id,
+          deposit.user_id,
+          deposit.payer_phone,
+          deposit.operator,
+          deposit.status
+        ]
+        .filter(Boolean)
+        .some(value =>
+          String(value)
+            .toLowerCase()
+            .includes(query)
+        );
+
+      });
+
+    rows.innerHTML = "";
+
+    if (!filtered.length) {
+
+      empty.style.display = "block";
+      tableContainer.style.display = "none";
+
+      return;
+
+    }
+
+    empty.style.display = "none";
+    tableContainer.style.display = "block";
+
+    filtered.forEach(deposit => {
+
+      const tr =
+        document.createElement("tr");
+
+      const proofButton =
+        deposit.proof_path
+          ? `
+            <button
+              class="btn proof"
+              onclick="viewProof('${escapeJs(deposit.proof_path)}')">
+              Voir la preuve
+            </button>
+          `
+          : `
+            <span style="color:#746a78;font-size:10px;">
+              Aucune preuve
+            </span>
+          `;
+
+      let actionButtons = proofButton;
+
+      if (deposit.status === "pending") {
+
+        actionButtons += `
+          <button
+            class="btn approve"
+            onclick="approveDeposit('${deposit.id}')">
+            Approuver
+          </button>
+
+          <button
+            class="btn reject"
+            onclick="rejectDeposit('${deposit.id}')">
+            Rejeter
+          </button>
+        `;
+
+      }
+
+      tr.innerHTML = `
+
+        <td>
+          <span class="id">
+            ${escapeHtml(deposit.transaction_id || deposit.id)}
+          </span>
+        </td>
+
+        <td>
+          ${escapeHtml(deposit.user_id || "—")}
+        </td>
+
+        <td>
+          <span class="amount">
+            ${formatXOF(deposit.amount)}
+          </span>
+        </td>
+
+        <td>
+          <span class="phone">
+            ${escapeHtml(deposit.payer_phone || "—")}
+          </span>
+        </td>
+
+        <td>
+          ${escapeHtml(deposit.operator || "—")}
+        </td>
+
+        <td>
+          <span class="status ${escapeHtml(deposit.status)}">
+            ${statusLabel(deposit.status)}
+          </span>
+        </td>
+
+        <td>
+          <span class="date">
+            ${formatDate(deposit.created_at)}
+          </span>
+        </td>
+
+        <td>
+          <div class="actions">
+            ${actionButtons}
+          </div>
+        </td>
+
+      `;
+
+      rows.appendChild(tr);
+
+    });
+
+  }
+
+  function escapeJs(value) {
+
+    return String(value || "")
+      .replaceAll("\\", "\\\\")
+      .replaceAll("'", "\\'")
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "\\r");
+
+  }
+
+  async function viewProof(path) {
+
+    const modal =
+      document.getElementById("proofModal");
+
+    const area =
+      document.getElementById("proofArea");
+
+    modal.classList.add("open");
+
+    area.innerHTML = `
+      <div class="proof-loading">
+        Chargement de la preuve...
+      </div>
+    `;
+
+    if (!path) {
+
+      area.innerHTML = `
+        <div class="proof-loading">
+          Aucune preuve disponible.
+        </div>
+      `;
+
+      return;
+
+    }
+
+    /*
+      Le bucket deposit-proofs est privé.
+      On génère donc une URL signée temporaire.
+    */
+
+    const { data, error } =
+      await supabaseClient.storage
+        .from("deposit-proofs")
+        .createSignedUrl(
+          path,
+          300
+        );
+
+    if (error || !data?.signedUrl) {
+
+      console.error(error);
+
+      area.innerHTML = `
+        <div class="proof-loading">
+          Impossible d'ouvrir la preuve.
+        </div>
+      `;
+
+      return;
+
+    }
+
+    const url =
+      data.signedUrl;
+
+    const extension =
+      path
+        .split("?")[0]
+        .split(".")
+        .pop()
+        .toLowerCase();
+
+    if (
+      ["jpg", "jpeg", "png", "webp"].includes(extension)
+    ) {
+
+      area.innerHTML = `
+        <img
+          src="${escapeHtml(url)}"
+          alt="Preuve du dépôt">
+      `;
+
+    } else {
+
+      area.innerHTML = `
+        <iframe
+          src="${escapeHtml(url)}"
+          title="Preuve du dépôt">
+        </iframe>
+      `;
+
+    }
+
+  }
+
+  function closeProof(event) {
+
+    if (
+      event &&
+      event.target !==
+      document.getElementById("proofModal")
+    ) {
+      return;
+    }
+
+    document
+      .getElementById("proofModal")
+      .classList.remove("open");
+
+    document
+      .getElementById("proofArea")
+      .innerHTML = "";
+
+  }
+
+  async function approveDeposit(id) {
+
+    if (
+      !confirm(
+        "Voulez-vous vraiment approuver ce dépôt ?"
+      )
+    ) {
+      return;
+    }
+
+    const { error } =
+      await supabaseClient.rpc(
+        "admin_approve_deposit",
+        {
+          p_session_token:
+            sessionToken,
+          p_deposit_id:
+            id
+        }
+      );
+
+    if (error) {
+
+      alert(
+        error.message ||
+        "Impossible d'approuver le dépôt."
+      );
+
+      return;
+
+    }
+
+    await loadDeposits();
+
+  }
+
+  async function rejectDeposit(id) {
+
+    if (
+      !confirm(
+        "Voulez-vous vraiment rejeter ce dépôt ?"
+      )
+    ) {
+      return;
+    }
+
+    const { error } =
+      await supabaseClient.rpc(
+        "admin_reject_deposit",
+        {
+          p_session_token:
+            sessionToken,
+          p_deposit_id:
+            id
+        }
+      );
+
+    if (error) {
+
+      alert(
+        error.message ||
+        "Impossible de rejeter le dépôt."
+      );
+
+      return;
+
+    }
+
+    await loadDeposits();
+
+  }
+
+  loadDeposits();
+
+</script></body>
+  </html>
