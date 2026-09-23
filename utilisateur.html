@@ -1,0 +1,1141 @@
+<!DOCTYPE html><html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <title>OSMO — Détail utilisateur</title>  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #09070d;
+      color: #f5f3f7;
+      min-height: 100vh;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 245px;
+      background: #0d0a12;
+      border-right: 1px solid #251b30;
+      padding: 24px 15px;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      overflow-y: auto;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo img {
+      width: 62px;
+      height: 62px;
+      object-fit: contain;
+      border-radius: 14px;
+      margin-bottom: 8px;
+    }
+
+    .logo strong {
+      display: block;
+      font-size: 21px;
+      letter-spacing: 2px;
+    }
+
+    .logo span {
+      color: #9b8fa5;
+      font-size: 11px;
+    }
+
+    .nav a {
+      display: block;
+      color: #bdb4c5;
+      text-decoration: none;
+      padding: 13px 14px;
+      margin-bottom: 5px;
+      border-radius: 9px;
+      font-size: 14px;
+    }
+
+    .nav a:hover,
+    .nav a.active {
+      background: #21152b;
+      color: #c9a7ff;
+    }
+
+    .main {
+      margin-left: 245px;
+      width: calc(100% - 245px);
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .topbar h1 {
+      font-size: 25px;
+    }
+
+    .back {
+      color: #c9a7ff;
+      text-decoration: none;
+      border: 1px solid #352542;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .back:hover {
+      background: #1b1323;
+    }
+
+    .error {
+      display: none;
+      background: #32151a;
+      border: 1px solid #702631;
+      color: #ffb4bd;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .loading {
+      background: #110d16;
+      border: 1px solid #251b30;
+      border-radius: 12px;
+      padding: 25px;
+      color: #aaa0b0;
+    }
+
+    .content {
+      display: none;
+    }
+
+    .profile {
+      background: linear-gradient(145deg, #15101b, #0f0b13);
+      border: 1px solid #2a2032;
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .profile-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .profile-title {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
+      background: #251932;
+      color: #c9a7ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 21px;
+    }
+
+    .profile-title h2 {
+      font-size: 19px;
+      margin-bottom: 5px;
+    }
+
+    .profile-title p {
+      color: #918696;
+      font-size: 12px;
+    }
+
+    .status {
+      padding: 7px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .status.active {
+      color: #72e6ae;
+      background: #102c20;
+      border: 1px solid #1c6244;
+    }
+
+    .status.blocked,
+    .status.suspended {
+      color: #ff9da8;
+      background: #32151a;
+      border: 1px solid #702631;
+    }
+
+    .status.default {
+      color: #d2c9d7;
+      background: #211b25;
+      border: 1px solid #39303e;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .info {
+      background: #0d0a11;
+      border: 1px solid #241b2c;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .info label {
+      display: block;
+      color: #847989;
+      font-size: 11px;
+      margin-bottom: 7px;
+    }
+
+    .info strong {
+      display: block;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    .balance {
+      color: #d7b7ff;
+      font-size: 18px !important;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: #110d16;
+      border: 1px solid #251b30;
+      border-radius: 12px;
+      padding: 17px;
+    }
+
+    .stat span {
+      display: block;
+      color: #877b8e;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      font-size: 19px;
+    }
+
+    .section {
+      background: #110d16;
+      border: 1px solid #251b30;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .section-title {
+      padding: 16px 18px;
+      border-bottom: 1px solid #251b30;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .section-body {
+      padding: 18px;
+    }
+
+    .account-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .account-item {
+      background: #0c0910;
+      border: 1px solid #241b2c;
+      border-radius: 9px;
+      padding: 13px;
+    }
+
+    .account-item span {
+      display: block;
+      color: #857989;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    .account-item strong {
+      font-size: 13px;
+    }
+
+    .empty {
+      padding: 25px;
+      text-align: center;
+      color: #817584;
+      font-size: 13px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+    }
+
+    th,
+    td {
+      padding: 13px 15px;
+      text-align: left;
+      border-bottom: 1px solid #211927;
+      font-size: 12px;
+    }
+
+    th {
+      color: #817685;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      background: #0d0a11;
+    }
+
+    td {
+      color: #ddd6e1;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .amount-positive {
+      color: #71dfa9;
+    }
+
+    .amount-negative {
+      color: #ff9da8;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: #21172a;
+      color: #c7a6fa;
+      font-size: 10px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 15px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .btn-danger {
+      background: #421920;
+      color: #ffb0b9;
+      border: 1px solid #74313b;
+    }
+
+    .btn-success {
+      background: #123325;
+      color: #7ce5b0;
+      border: 1px solid #245f45;
+    }
+
+    .btn-warning {
+      background: #332913;
+      color: #eacb7c;
+      border: 1px solid #66501e;
+    }
+
+    .btn:hover {
+      filter: brightness(1.15);
+    }
+
+    @media (max-width: 1100px) {
+      .info-grid,
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .account-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 800px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+        min-height: auto;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .main {
+        margin-left: 0;
+        width: 100%;
+        padding: 18px;
+      }
+
+      .nav {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+      }
+
+      .nav a {
+        margin: 0;
+      }
+
+      .profile-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 550px) {
+      .info-grid,
+      .stats,
+      .account-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .profile {
+        padding: 16px;
+      }
+    }
+  </style></head><body><div class="layout">  <aside class="sidebar">
+    <div class="logo">
+      <img src="../logo.png" alt="OSMO">
+      <strong>OSMO</strong>
+      <span>Administration</span>
+    </div><nav class="nav">
+  <a href="dashboard.html">Dashboard</a>
+  <a href="utilisateurs.html" class="active">Utilisateurs</a>
+  <a href="depots.html">Dépôts</a>
+  <a href="retraits.html">Retraits</a>
+  <a href="produits.html">Produits</a>
+  <a href="parrainages.html">Parrainages</a>
+  <a href="transactions.html">Transactions</a>
+  <a href="parametres.html">Paramètres</a>
+</nav>
+
+  </aside>  <main class="main"><div class="topbar">
+  <div>
+    <h1>Détail utilisateur</h1>
+  </div>
+
+  <a class="back" href="utilisateurs.html">
+    Retour aux utilisateurs
+  </a>
+</div>
+
+<div id="errorBox" class="error"></div>
+
+<div id="loading" class="loading">
+  Chargement des informations...
+</div>
+
+<div id="content" class="content">
+
+  <section class="profile">
+
+    <div class="profile-head">
+
+      <div class="profile-title">
+        <div class="avatar" id="avatar">U</div>
+
+        <div>
+          <h2 id="professionalId">—</h2>
+          <p id="phone">—</p>
+        </div>
+      </div>
+
+      <span id="status" class="status default">—</span>
+
+    </div>
+
+    <div class="info-grid">
+
+      <div class="info">
+        <label>ID professionnel</label>
+        <strong id="infoProfessionalId">—</strong>
+      </div>
+
+      <div class="info">
+        <label>Téléphone</label>
+        <strong id="infoPhone">—</strong>
+      </div>
+
+      <div class="info">
+        <label>Code de parrainage</label>
+        <strong id="infoReferral">—</strong>
+      </div>
+
+      <div class="info">
+        <label>Parrain</label>
+        <strong id="infoReferredBy">—</strong>
+      </div>
+
+      <div class="info">
+        <label>Inscription</label>
+        <strong id="infoCreated">—</strong>
+      </div>
+
+      <div class="info">
+        <label>ID interne</label>
+        <strong id="infoId">—</strong>
+      </div>
+
+      <div class="info">
+        <label>Solde disponible</label>
+        <strong id="infoBalance" class="balance">0 XOF</strong>
+      </div>
+
+      <div class="info">
+        <label>Statut</label>
+        <strong id="infoStatus">—</strong>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="stats">
+
+    <div class="stat">
+      <span>Total dépôts</span>
+      <strong id="totalDeposits">0 XOF</strong>
+    </div>
+
+    <div class="stat">
+      <span>Total retraits</span>
+      <strong id="totalWithdrawals">0 XOF</strong>
+    </div>
+
+    <div class="stat">
+      <span>Total gains</span>
+      <strong id="totalEarnings">0 XOF</strong>
+    </div>
+
+    <div class="stat">
+      <span>Total commissions</span>
+      <strong id="totalCommissions">0 XOF</strong>
+    </div>
+
+  </section>
+
+  <section class="section">
+
+    <div class="section-title">
+      Actions administrateur
+    </div>
+
+    <div class="section-body">
+      <div class="actions">
+
+        <button
+          id="blockBtn"
+          class="btn btn-danger"
+          onclick="changeStatus('block')">
+          Bloquer l'utilisateur
+        </button>
+
+        <button
+          id="suspendBtn"
+          class="btn btn-warning"
+          onclick="changeStatus('suspend')">
+          Suspendre l'utilisateur
+        </button>
+
+        <button
+          id="reactivateBtn"
+          class="btn btn-success"
+          onclick="changeStatus('reactivate')">
+          Réactiver l'utilisateur
+        </button>
+
+      </div>
+    </div>
+
+  </section>
+
+  <section class="section">
+
+    <div class="section-title">
+      Compte de retrait
+    </div>
+
+    <div id="withdrawalAccount"></div>
+
+  </section>
+
+  <section class="section">
+
+    <div class="section-title">
+      Investissements
+    </div>
+
+    <div id="products"></div>
+
+  </section>
+
+  <section class="section">
+
+    <div class="section-title">
+      Transactions
+    </div>
+
+    <div id="transactions"></div>
+
+  </section>
+
+</div>
+
+  </main></div><script>
+  const SUPABASE_URL =
+    "https://ubzcivowwhglvzpyeueg.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_oPjQfIoZzfv1LuLAfsua4g_97K_tXSO";
+
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+  const sessionToken =
+    localStorage.getItem("osmo_admin_session_token");
+
+  const params =
+    new URLSearchParams(window.location.search);
+
+  const userId =
+    params.get("id");
+
+  const loading =
+    document.getElementById("loading");
+
+  const content =
+    document.getElementById("content");
+
+  const errorBox =
+    document.getElementById("errorBox");
+
+  function formatXOF(value) {
+    const number = Number(value || 0);
+
+    return number.toLocaleString("fr-FR") + " XOF";
+  }
+
+  function formatDate(value) {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "—";
+    }
+
+    return date.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function escapeHtml(value) {
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function showError(message) {
+    loading.style.display = "none";
+    content.style.display = "none";
+
+    errorBox.textContent = message;
+    errorBox.style.display = "block";
+  }
+
+  function showContent() {
+    loading.style.display = "none";
+    errorBox.style.display = "none";
+    content.style.display = "block";
+  }
+
+  function statusClass(status) {
+    if (status === "active") return "active";
+    if (status === "blocked") return "blocked";
+    if (status === "suspended") return "suspended";
+
+    return "default";
+  }
+
+  function statusLabel(status) {
+    const labels = {
+      active: "Actif",
+      blocked: "Bloqué",
+      suspended: "Suspendu"
+    };
+
+    return labels[status] || status || "Inconnu";
+  }
+
+  function transactionAmountClass(amount) {
+    return Number(amount) >= 0
+      ? "amount-positive"
+      : "amount-negative";
+  }
+
+  async function loadUser() {
+
+    if (!sessionToken) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    if (!userId) {
+      showError("Identifiant utilisateur manquant.");
+      return;
+    }
+
+    const { data, error } =
+      await supabaseClient.rpc(
+        "admin_user_details",
+        {
+          p_session_token: sessionToken,
+          p_user_id: userId
+        }
+      );
+
+    if (error) {
+      console.error(error);
+      showError(
+        error.message ||
+        "Impossible de charger cet utilisateur."
+      );
+      return;
+    }
+
+    if (!data || !data.user) {
+      showError("Utilisateur introuvable.");
+      return;
+    }
+
+    renderUser(data);
+    showContent();
+  }
+
+  function renderUser(data) {
+
+    const user = data.user;
+
+    document.getElementById("professionalId").textContent =
+      user.professional_id || "—";
+
+    document.getElementById("phone").textContent =
+      user.phone || "—";
+
+    document.getElementById("avatar").textContent =
+      (user.professional_id || "U")
+        .substring(0, 1)
+        .toUpperCase();
+
+    document.getElementById("infoProfessionalId").textContent =
+      user.professional_id || "—";
+
+    document.getElementById("infoPhone").textContent =
+      user.phone || "—";
+
+    document.getElementById("infoReferral").textContent =
+      user.referral_code || "—";
+
+    document.getElementById("infoReferredBy").textContent =
+      user.referred_by || "Aucun";
+
+    document.getElementById("infoCreated").textContent =
+      formatDate(user.created_at);
+
+    document.getElementById("infoId").textContent =
+      user.id || "—";
+
+    document.getElementById("infoBalance").textContent =
+      formatXOF(user.balance);
+
+    document.getElementById("infoStatus").textContent =
+      statusLabel(user.status);
+
+    const statusElement =
+      document.getElementById("status");
+
+    statusElement.textContent =
+      statusLabel(user.status);
+
+    statusElement.className =
+      "status " + statusClass(user.status);
+
+    document.getElementById("totalDeposits").textContent =
+      formatXOF(user.total_deposits);
+
+    document.getElementById("totalWithdrawals").textContent =
+      formatXOF(user.total_withdrawals);
+
+    document.getElementById("totalEarnings").textContent =
+      formatXOF(user.total_earnings);
+
+    document.getElementById("totalCommissions").textContent =
+      formatXOF(user.total_commissions);
+
+    renderWithdrawalAccount(
+      data.withdrawal_account
+    );
+
+    renderProducts(
+      data.products || []
+    );
+
+    renderTransactions(
+      data.transactions || []
+    );
+
+    updateActionButtons(user.status);
+  }
+
+  function renderWithdrawalAccount(account) {
+
+    const container =
+      document.getElementById("withdrawalAccount");
+
+    if (!account) {
+      container.innerHTML =
+        '<div class="empty">Aucun compte de retrait enregistré.</div>';
+
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="section-body">
+        <div class="account-grid">
+
+          <div class="account-item">
+            <span>Téléphone</span>
+            <strong>${escapeHtml(account.account_phone || "—")}</strong>
+          </div>
+
+          <div class="account-item">
+            <span>Bénéficiaire</span>
+            <strong>${escapeHtml(account.beneficiary_name || "—")}</strong>
+          </div>
+
+          <div class="account-item">
+            <span>Opérateur</span>
+            <strong>${escapeHtml(account.operator || "—")}</strong>
+          </div>
+
+          <div class="account-item">
+            <span>Créé le</span>
+            <strong>${formatDate(account.created_at)}</strong>
+          </div>
+
+          <div class="account-item">
+            <span>Dernière modification</span>
+            <strong>${formatDate(account.updated_at)}</strong>
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  function renderProducts(products) {
+
+    const container =
+      document.getElementById("products");
+
+    if (!products.length) {
+      container.innerHTML =
+        '<div class="empty">Aucun investissement enregistré.</div>';
+
+      return;
+    }
+
+    let html = `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>Prix</th>
+              <th>Gain journalier</th>
+              <th>Gain total</th>
+              <th>Généré</th>
+              <th>Jours</th>
+              <th>Statut</th>
+              <th>Début</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    products.forEach(item => {
+
+      html += `
+        <tr>
+
+          <td>
+            ${escapeHtml(item.product_id || "—")}
+          </td>
+
+          <td>
+            ${formatXOF(item.purchase_price)}
+          </td>
+
+          <td>
+            ${formatXOF(item.daily_income)}
+          </td>
+
+          <td>
+            ${formatXOF(item.total_income)}
+          </td>
+
+          <td class="amount-positive">
+            ${formatXOF(item.generated_income)}
+          </td>
+
+          <td>
+            ${escapeHtml(item.days_paid ?? 0)}
+          </td>
+
+          <td>
+            <span class="pill">
+              ${escapeHtml(item.status || "—")}
+            </span>
+          </td>
+
+          <td>
+            ${formatDate(item.start_at)}
+          </td>
+
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    container.innerHTML = html;
+  }
+
+  function renderTransactions(transactions) {
+
+    const container =
+      document.getElementById("transactions");
+
+    if (!transactions.length) {
+      container.innerHTML =
+        '<div class="empty">Aucune transaction enregistrée.</div>';
+
+      return;
+    }
+
+    let html = `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID transaction</th>
+              <th>Type</th>
+              <th>Montant</th>
+              <th>Description</th>
+              <th>Référence</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    transactions.forEach(tx => {
+
+      const amount =
+        Number(tx.amount || 0);
+
+      html += `
+        <tr>
+
+          <td>
+            ${escapeHtml(tx.transaction_id || "—")}
+          </td>
+
+          <td>
+            <span class="pill">
+              ${escapeHtml(tx.type || "—")}
+            </span>
+          </td>
+
+          <td class="${transactionAmountClass(amount)}">
+            ${amount >= 0 ? "+" : ""}${formatXOF(amount)}
+          </td>
+
+          <td>
+            ${escapeHtml(tx.description || "—")}
+          </td>
+
+          <td>
+            ${escapeHtml(tx.reference_id || "—")}
+          </td>
+
+          <td>
+            ${formatDate(tx.created_at)}
+          </td>
+
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    container.innerHTML = html;
+  }
+
+  function updateActionButtons(status) {
+
+    const blockBtn =
+      document.getElementById("blockBtn");
+
+    const suspendBtn =
+      document.getElementById("suspendBtn");
+
+    const reactivateBtn =
+      document.getElementById("reactivateBtn");
+
+    blockBtn.style.display =
+      status === "blocked" ? "none" : "inline-block";
+
+    suspendBtn.style.display =
+      status === "suspended" ? "none" : "inline-block";
+
+    reactivateBtn.style.display =
+      status === "active" ? "none" : "inline-block";
+  }
+
+  async function changeStatus(action) {
+
+    if (!sessionToken || !userId) {
+      return;
+    }
+
+    let rpcName = "";
+    let confirmation = "";
+
+    if (action === "block") {
+      rpcName = "admin_block_user";
+      confirmation =
+        "Voulez-vous vraiment bloquer cet utilisateur ?";
+    }
+
+    if (action === "suspend") {
+      rpcName = "admin_suspend_user";
+      confirmation =
+        "Voulez-vous vraiment suspendre cet utilisateur ?";
+    }
+
+    if (action === "reactivate") {
+      rpcName = "admin_reactivate_user";
+      confirmation =
+        "Voulez-vous réactiver cet utilisateur ?";
+    }
+
+    if (!rpcName) return;
+
+    if (!confirm(confirmation)) {
+      return;
+    }
+
+    const { error } =
+      await supabaseClient.rpc(
+        rpcName,
+        {
+          p_session_token: sessionToken,
+          p_user_id: userId
+        }
+      );
+
+    if (error) {
+      alert(
+        error.message ||
+        "L'opération a échoué."
+      );
+      return;
+    }
+
+    await loadUser();
+  }
+
+  loadUser();
+</script>
+</body>
+</html>
